@@ -8,30 +8,15 @@ A 2018-edition compatible version (Rust 1.31+) is needed.
 
 Other similiar libraries with support for much more displays are [u8g2](https://github.com/olikraus/u8g2) and [GxEPD](https://github.com/ZinggJM/GxEPD) for arduino.
 
-## Examples
+## Usage
 
-There are multiple examples in the examples folder. Use `cargo run --example example_name` to try them.
 
 ```Rust
 // Setup the epd
-let mut epd = EPD4in2::new(&mut spi, cs, busy, dc, rst, &mut delay)?;
+
 
 // Setup the graphics
-let mut display = Display4in2::default();
 
-// Draw some text
-display.draw(
-    let _ = Text::new("Hello Rust!", Point::new(x, y))
-        .into_styled(text_style!(
-            font = Font12x16,
-            text_color = Black,
-            background_color = White
-        ))
-        .draw(display);
-);
-
-// Transfer the frame data to the epd and display it
-epd.update_and_display_frame(&mut spi, &display.buffer())?;
 ```
 
 ### Interface
@@ -44,9 +29,10 @@ epd.update_and_display_frame(&mut spi, &display.buffer())?;
 | DC    | 	Data/Command control pin (High for data, and low for command) |
 | RST   | 	External reset pin (Low for reset) |
 | BUSY  | 	Busy state output pin (Low for busy)  |
-| PWR   |   Power pin
 
 ## Credits
 
 * [Waveshare EPD driver](https://github.com/caemor/epd-waveshare)
 * [SSD1306 OLED display driver](https://github.com/jamwaffles/ssd1306)
+* [Sample C++ Source from STM](https://os.mbed.com/teams/ST/code/EPD_GDE021A1//file/6ee9c1afd6ec/EPD_GDE021A1.cpp)
+* [GDE021A1 Specification](http://www.e-paper-display.com/GDE021A1%20V2.0%20Specification315e.pdf?method=picker&flag=all&id=cbf74932-4964-43d6-9f0c-d1c45feaec77&fileId=294&v=3.zip)
