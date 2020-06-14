@@ -7,18 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [v0.1.1] - 2020-06-06
-
-### Added
-
-- Initial operational display driver
+## [v0.1.2 - 2020-06-06
 
 ### Changed
- 
-- None
+- Readme content
 
-### Fixed
-- None
+## [v0.1.1 - 2020-06-06
 
-### Removed
-- None
+### Added
+- Initial operational display driver

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/almedso/epd-gde021a1.svg?branch=master)](https://travis-ci.com/caemor/epd-waveshare)
+[![Build Status](https://travis-ci.com/almedso/epd-gde021a1.svg?branch=master)](https://travis-ci.com/github/almedso/epd-gde021a1)
 
 This library contains a driver for E-Paper Modules with Controller GDE021A1 ((172x72 B/W Pixel via SPI)).
 

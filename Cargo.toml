@@ -9,7 +9,7 @@ keywords = ["embedded", "ePaper", "Display", "epd", "gde021a1"]
 license-file = "License.md"
 name = "epd-gde021a1"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 exclude = [
     ".gitignore",
