@@ -10,7 +10,7 @@ before_install:
 
 script:
   - cargo check --all-features
-  - cargo test --all-features
+  - cargo test --all-features  --lib
 
 cache: cargo
 before_cache:

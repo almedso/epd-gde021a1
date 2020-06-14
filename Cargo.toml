@@ -1,14 +1,14 @@
 [package]
 authors = ["Volker Kempert <volker.kempert@almedso.de>"]
-categories = ["embedded", "hardware-support", "no-std"]
 description = "An embedded-hal based driver for ePaper displays with chip: GDE021A1 (172x72 B/W via SPI)"
-documentation = "http://www.e-paper-display.com/GDE021A1%20V2.0%20Specification315e.pdf?method=picker&flag=all&id=cbf74932-4964-43d6-9f0c-d1c45feaec77&fileId=294&v=3.zip"
-homepage = "https://github.com/almedso/epd-dge021a1"
-keywords = ["embedded", "ePaper", "Display", "epd", "dge021a1"]
-license = "ISC"
+documentation = "https://doc.rs/epd-gde021a1"
+homepage = "https://github.com/almedso/epd-gde021a1"
+repository = "https://github.com/almedso/epd-gde021a1"
+categories = ["embedded", "hardware-support", "no-std"]
+keywords = ["embedded", "ePaper", "Display", "epd", "gde021a1"]
+license-file = "License.md"
 name = "epd-gde021a1"
 readme = "README.md"
-repository = "https://github.com/almedso/epd-dge021a1.git"
 version = "0.1.0"
 edition = "2018"
 
@@ -22,13 +22,11 @@ num-traits = { version = "0.2", default-features = false }
 num-derive = { version = "0.2", default-features = false }
 
 [dev-dependencies]
-#linux-embedded-hal = "0.3"
-#embedded-hal-mock = "0.7"
+cortex-m = "^0.6.2"
+cortex-m-rt = "^0.6.10"
+panic-halt = "^0.2.0"
+stm32l0xx-hal = { version = "0.6.2", features = ["stm32l0x3", "io-STM32L051", "rt"] }
 
 [features]
 default = ["graphics"]
-
 graphics = ["embedded-graphics"]
-
-# Offers an alternative fast full lut for type_a displays, but the refreshed screen isnt as clean looking
-type_a_alternative_faster_lut = []
