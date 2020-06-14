@@ -9,8 +9,13 @@ keywords = ["embedded", "ePaper", "Display", "epd", "gde021a1"]
 license-file = "License.md"
 name = "epd-gde021a1"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
+exclude = [
+    ".gitignore",
+    ".github/*",
+    ".travis.yml",
+]
 
 [badges]
 # travis-ci = { repository = "almedso/epd-dge021a1" }
@@ -30,3 +35,4 @@ stm32l0xx-hal = { version = "0.6.2", features = ["stm32l0x3", "io-STM32L051", "r
 [features]
 default = ["graphics"]
 graphics = ["embedded-graphics"]
+

@@ -7,17 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [v0.1.0] - 2020-06-06
+## [v0.1.1] - 2020-06-06
 
 ### Added
- - Todo
+
+- Initial operational display driver
 
 ### Changed
- - 
+ 
+- None
 
 ### Fixed
- - 
+- None
 
 ### Removed
-- 
-
+- None
