@@ -87,7 +87,9 @@
 //! [`embedded-graphics`]: https://docs.rs/embedded-graphics
 
 #![crate_type = "lib"]
-#![no_std]
+#![cfg_attr(test, allow(unused_imports))]
+#![cfg_attr(not(test), no_std)]
+
 #![deny(missing_docs)]
 
 use core::convert::TryInto;
@@ -157,10 +159,9 @@ const HEIGHT: u16 = 18;
 const GEOM_HEIGHT: i32 = (4 * HEIGHT) as i32;
 
 /// Shift pixels
-fn pixel_to_byte(position: usize, color: Color) -> u8 {
-    let val: u8 = color as u8;
+fn pixel_to_byte(position: usize, color: u8) -> u8 {
     let p = position << 1;
-    val << p
+    color << p
 }
 
 /// Generate and-able mask for position
@@ -171,7 +172,7 @@ fn position_mask(position: usize) -> u8 {
 }
 
 /// Compute corresponding byte
-fn overwrite_pixel_in_byte(byte: u8, position: usize, color: Color) -> u8 {
+fn overwrite_pixel_in_byte(byte: u8, position: usize, color: u8) -> u8 {
     let val: u8 = byte & position_mask(position);
     val | pixel_to_byte(position, color)
 }
@@ -192,7 +193,13 @@ fn overwrite_pixel_in_byte(byte: u8, position: usize, color: Color) -> u8 {
 /// by the embedded graphics trait and communicating with the chip only allows updates of a set of
 /// four pixels.
 ///
-/// This driver only supports binary pixel color:
+/// This driver supports four gray level pixel color
+/// * *embedded_graphics::pixelcolor::Gray2::new(0)* maps to *black*
+/// * *embedded_graphics::pixelcolor::Gray2::new(1)* maps to *dark gray*
+/// * *embedded_graphics::pixelcolor::Gray2::new(2)* maps to *light gray*
+/// * *embedded_graphics::pixelcolor::Gray2::new(3)* maps to *white*
+///
+/// This driver supports binary pixel color:
 /// * *embedded_graphics::pixelcolor::BinaryColor::On* maps to *black*
 /// * *embedded_graphics::pixelcolor::BinaryColor::Off* maps to *white*.
 ///
@@ -357,6 +364,7 @@ where
 
     /// Clear just resets the buffer to a defined color
     fn clear_with_color(&mut self, color: Color) {
+        let color: u8 = color as u8;
         let val: u8 = pixel_to_byte(0, color);
         let val: u8 = pixel_to_byte(1, color) | val;
         let val: u8 = pixel_to_byte(2, color) | val;
@@ -412,8 +420,8 @@ where
     }
 
     /// Wait until busy flag is cleared by the chip
-    fn busy_wait(&self) {
-        while match self.bsy.is_high() {
+    pub fn busy_wait(&self) {
+        while match self.bsy.is_low() {
             Ok(x) => x,
             _ => false,
         } {}
@@ -432,7 +440,6 @@ where
 
         self.disable_cs(delay)?;
         delay.delay_us(400_000);
-        self.busy_wait();
 
         Ok(())
     }
@@ -465,9 +472,52 @@ where
 #[cfg(feature = "graphics")]
 extern crate embedded_graphics;
 #[cfg(feature = "graphics")]
-use self::embedded_graphics::{drawable, geometry::Size, pixelcolor::BinaryColor, DrawTarget};
+use self::embedded_graphics::{
+    prelude::RawData,
+    drawable,
+    geometry::Size,
+    pixelcolor::{BinaryColor, Gray2, raw::RawU2 },
+    DrawTarget
+};
 
 #[cfg(feature = "graphics")]
+impl<SPI, CS, RST, DC, BSY, PinError, SPIError> DrawTarget<Gray2>
+    for GDE021A1<SPI, CS, RST, DC, BSY>
+where
+    SPI: spi::Write<u8, Error = SPIError>,
+    RST: OutputPin<Error = PinError>,
+    CS: OutputPin<Error = PinError>,
+    DC: OutputPin<Error = PinError>,
+    BSY: InputPin<Error = PinError>,
+{
+    type Error = Error<SPIError, PinError>;
+
+    fn size(&self) -> Size {
+        Size::new(WIDTH.try_into().unwrap(), (4 * HEIGHT).try_into().unwrap())
+    }
+
+    fn draw_pixel(
+        &mut self,
+        pixel: drawable::Pixel<Gray2>,
+    ) -> Result<(), Error<SPIError, PinError>> {
+        let drawable::Pixel(coord, color) = pixel;
+        if let Ok((x @ 0..=GEOM_WIDTH, y @ 0..=GEOM_HEIGHT)) = coord.try_into() {
+            let r : RawU2 = color.into();
+            let c : u8 = r.into_inner();
+            // Convert to remainder for pixel position and base for y address
+            let p: usize = (y % 4).try_into().unwrap();
+            let p: usize = 3 - p;
+            let y: usize = (y / 4).try_into().unwrap();
+            // Mirror x to make text appear correctly
+            let x: usize = (GEOM_WIDTH - x).try_into().unwrap();
+            let byte: u8 = self.buffer[y + x * HEIGHT as usize];
+            self.buffer[y + x * HEIGHT as usize] = overwrite_pixel_in_byte(byte, p, c);
+        }
+        Ok(())
+    }
+}
+
+
 impl<SPI, CS, RST, DC, BSY, PinError, SPIError> DrawTarget<BinaryColor>
     for GDE021A1<SPI, CS, RST, DC, BSY>
 where
@@ -493,6 +543,7 @@ where
                 BinaryColor::On => Color::BLACK,
                 BinaryColor::Off => Color::WHITE,
             };
+            let c: u8 = c as u8;
             // Convert to remainder for pixel position and base for y address
             let p: usize = (y % 4).try_into().unwrap();
             let p: usize = 3 - p;
@@ -507,41 +558,40 @@ where
 }
 
 #[cfg(test)]
-
 mod tests {
 
     use crate::{pixel_to_byte, position_mask, Color};
 
     #[test]
     fn it_should_convert_pixel_to_byte_at_zero_pos() {
-        assert_eq!(0b0000_0000, pixel_to_byte(0, Color::BLACK));
-        assert_eq!(0b0000_0001, pixel_to_byte(0, Color::DARKGRAY));
-        assert_eq!(0b0000_0010, pixel_to_byte(0, Color::LIGHTGRAY));
-        assert_eq!(0b0000_0011, pixel_to_byte(0, Color::WHITE));
+        assert_eq!(0b0000_0000, pixel_to_byte(0, Color::BLACK as u8));
+        assert_eq!(0b0000_0001, pixel_to_byte(0, Color::DARKGRAY as u8));
+        assert_eq!(0b0000_0010, pixel_to_byte(0, Color::LIGHTGRAY as u8));
+        assert_eq!(0b0000_0011, pixel_to_byte(0, Color::WHITE as u8));
     }
 
     #[test]
     fn it_should_convert_pixel_to_byte_at_one_pos() {
-        assert_eq!(0b0000_0000, pixel_to_byte(1, Color::BLACK));
-        assert_eq!(0b0000_0100, pixel_to_byte(1, Color::DARKGRAY));
-        assert_eq!(0b0000_1000, pixel_to_byte(1, Color::LIGHTGRAY));
-        assert_eq!(0b0000_1100, pixel_to_byte(1, Color::WHITE));
+        assert_eq!(0b0000_0000, pixel_to_byte(1, Color::BLACK as u8));
+        assert_eq!(0b0000_0100, pixel_to_byte(1, Color::DARKGRAY as u8));
+        assert_eq!(0b0000_1000, pixel_to_byte(1, Color::LIGHTGRAY as u8));
+        assert_eq!(0b0000_1100, pixel_to_byte(1, Color::WHITE as u8));
     }
 
     #[test]
     fn it_should_convert_pixel_to_byte_at_two_pos() {
-        assert_eq!(0b0000_0000, pixel_to_byte(2, Color::BLACK));
-        assert_eq!(0b0001_0000, pixel_to_byte(2, Color::DARKGRAY));
-        assert_eq!(0b0010_0000, pixel_to_byte(2, Color::LIGHTGRAY));
-        assert_eq!(0b0011_0000, pixel_to_byte(2, Color::WHITE));
+        assert_eq!(0b0000_0000, pixel_to_byte(2, Color::BLACK as u8));
+        assert_eq!(0b0001_0000, pixel_to_byte(2, Color::DARKGRAY as u8));
+        assert_eq!(0b0010_0000, pixel_to_byte(2, Color::LIGHTGRAY as u8));
+        assert_eq!(0b0011_0000, pixel_to_byte(2, Color::WHITE as u8));
     }
 
     #[test]
     fn it_should_convert_pixel_to_byte_at_three_pos() {
-        assert_eq!(0b0000_0000, pixel_to_byte(3, Color::BLACK));
-        assert_eq!(0b0100_0000, pixel_to_byte(3, Color::DARKGRAY));
-        assert_eq!(0b1000_0000, pixel_to_byte(3, Color::LIGHTGRAY));
-        assert_eq!(0b1100_0000, pixel_to_byte(3, Color::WHITE));
+        assert_eq!(0b0000_0000, pixel_to_byte(3, Color::BLACK as u8));
+        assert_eq!(0b0100_0000, pixel_to_byte(3, Color::DARKGRAY as u8));
+        assert_eq!(0b1000_0000, pixel_to_byte(3, Color::LIGHTGRAY as u8));
+        assert_eq!(0b1100_0000, pixel_to_byte(3, Color::WHITE as u8));
     }
 
     #[test]

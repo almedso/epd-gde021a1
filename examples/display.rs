@@ -15,7 +15,9 @@
 
 #![no_main]
 #![no_std]
-extern crate panic_halt;
+
+use panic_semihosting as _;
+use cortex_m_semihosting::hprintln;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
@@ -30,10 +32,10 @@ use epd_gde021a1;
 
 extern crate embedded_graphics;
 use embedded_graphics::{
-    pixelcolor::BinaryColor,
+    pixelcolor::{BinaryColor, Gray2},
     style::{PrimitiveStyle, TextStyle},
     primitives::Circle,
-    fonts::{Font12x16, Font6x8, Text},
+    fonts::{Font6x8, Text},
     prelude::*,
 };
 
@@ -41,6 +43,7 @@ use epd_gde021a1::GDE021A1;
 
 #[entry]
 fn main() -> ! {
+    hprintln!("** Start").unwrap();
     let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
@@ -71,19 +74,21 @@ fn main() -> ! {
     // and finally the display structure
     let mut disp =  GDE021A1::new(spi, reset, Some(chip_sel), data_cmd, busy);
 
-    // power on the on the display chip
+    hprintln!("** All config done ").unwrap();
+
+    hprintln!("** Power on the on the display").unwrap();
     power.set_low().unwrap();
 
-    // initialize the display
+    hprintln!("** Initialize the display").unwrap();
     disp.init(&mut delay).expect("could not init display");
     // disp.alt_init(&mut delay).expect("could not init display");
 
-    // all pixels turn white
+    hprintln!("** Draw/write on display (RAM cache)").unwrap();
     disp.clear();
 
     // draw some fancy stuff
     let elem =  Circle::new(Point::new(140, 36), 25)
-         .into_styled(PrimitiveStyle::with_fill(BinaryColor::On));
+         .into_styled(PrimitiveStyle::with_fill(Gray2::new(0b10)));
     elem.draw(&mut disp).unwrap();
 
     // Draw some text
@@ -97,11 +102,13 @@ fn main() -> ! {
         .into_styled(TextStyle::new(Font6x8, BinaryColor::On));
     elem.draw(&mut disp).unwrap();
     let elem = Text::new("Rust", Point::new(1, 44))
-        .into_styled(TextStyle::new(Font12x16, BinaryColor::On));
+        .into_styled(TextStyle::new(Font6x8, BinaryColor::On));
     elem.draw(&mut disp).unwrap();
 
+    hprintln!("** Refresh the display").unwrap();
     disp.refresh(&mut delay).expect("Could not refresh display");
 
+    hprintln!("** Enter the main loop").unwrap();
     loop {
         continue;
     }

@@ -9,12 +9,13 @@ keywords = ["embedded", "ePaper", "Display", "epd", "gde021a1"]
 license-file = "License.md"
 name = "epd-gde021a1"
 readme = "README.md"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2018"
 exclude = [
     ".gitignore",
     ".github/*",
     ".travis.yml",
+    "openocd*",
 ]
 
 [badges]
@@ -29,7 +30,9 @@ num-derive = { version = "0.2", default-features = false }
 [dev-dependencies]
 cortex-m = "^0.6.2"
 cortex-m-rt = "^0.6.10"
-panic-halt = "^0.2.0"
+cortex-m-semihosting = "^0.3.3"
+panic-semihosting = "^0.5.0"
+
 stm32l0xx-hal = { version = "0.6.2", features = ["stm32l0x3", "io-STM32L051", "rt"] }
 
 [features]
